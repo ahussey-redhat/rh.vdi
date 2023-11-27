@@ -1,0 +1,7 @@
+---
+- name: Create Fedora GUI image
+  hosts: localhost
+  become: false
+  gather_facts: false
+  roles:
+    - rh.vdi.create_fedora_gui_image

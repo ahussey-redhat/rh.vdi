@@ -1,0 +1,9 @@
+---
+all:
+  children:
+    workstations:
+      hosts:
+        wks1.dev.lab.local
+    virtual_machines:
+      children:
+        workstations:

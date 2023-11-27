@@ -1,0 +1,60 @@
+---
+- name: Generate workstation account name
+  ansible.builtin.set_fact:
+    _workstation_account: "user{{ inventory_hostname | regex_search('wks([0-9]+)\\.dev\\.lab\\.local', '\\1') | join }}"
+
+- name: Configure access.conf
+  ansible.builtin.copy:
+    content: |
+      +:user:ALL
+      +:user{{ _workstation_account }}:ALL
+      +:root:ALL
+      -:ALL:ALL
+    dest: /etc/security/access.conf
+
+- name: Configure sudo (workstation account)
+  ansible.builtin.copy:
+    content: |
+      {{ _workstation_account }} ALL=(ALL) ALL
+    dest: "/etc/sudoers.d/11_workstations"
+    mode: 0640
+    owner: root
+    group: root
+
+- name: Configure SSH
+  ansible.builtin.copy:
+    content: |
+      Banner /etc/issue
+    dest: /etc/ssh/sshd_config.d/90-custom.conf
+    mode: 0640
+    owner: root
+    group: root
+  notify: restart sshd
+
+- name: Configure login banner
+  ansible.builtin.copy:
+    src: banner
+    dest: /etc/issue
+    mode: 0644
+
+- name: Configure warning banner popup (script)
+  ansible.builtin.copy:
+    content: |
+      zenity --title "WARNING" --no-wrap --question --text "$(cat /etc/issue)\n\nContinue?\n"
+    dest: /usr/local/bin/xwarn.sh
+    mode: 0755
+    owner: root
+    group: root
+
+- name: Configure warning banner popup (autostart)
+  ansible.builtin.copy:
+    content: |
+      [Desktop Entry]
+      Type=Application
+      Name=Login Warning
+      Exec=/usr/local/bin/xwarn.sh
+      OnlyShowIn=GNOME;MATE;Unity;Cinnamon;
+    dest: /etc/xdg/autostart/xwarn.desktop
+    mode: 0644
+    owner: root
+    group: root

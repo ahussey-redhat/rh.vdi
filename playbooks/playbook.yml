@@ -1,0 +1,48 @@
+---
+- name: Prep tasks
+  hosts: workstations
+  become: false
+  gather_facts: false
+  tasks:
+  # seem to have to set the template this way as ansible can't find the local templates dir
+  # when running the rh.cvn.vm_deploy playbook
+  - name: Use custom fedora userdata template
+    ansible.builtin.set_fact:
+      vm_userdata_content: "{{ lookup('template', 'userdata.j2') }}"
+
+- name: Deploy VM(s)
+  import_playbook: rh.cnv.vm_deploy
+
+- name: Ensure VMs are available
+  hosts: workstations
+  gather_facts: false
+  remote_user: root
+  tasks:
+    - name: Ensure VM(s) are online
+      ansible.builtin.wait_for_connection:
+        timeout: 180
+        sleep: 10
+
+- name: Configure workstation VMs
+  hosts: workstations
+  become: false
+  roles:
+    - workstation
+  post_tasks:
+    - name: update all packages
+      ansible.builtin.dnf:
+        name: "*"
+        state: latest
+        update_cache: yes
+
+    - name: check if reboot required
+      ansible.builtin.shell: "/usr/bin/needs-restarting -r"
+      register: needs_restarting
+      failed_when: false
+      changed_when: needs_restarting.rc == 1
+      check_mode: no
+
+    - name: reboot the host(s)
+      ansible.builtin.reboot:
+        reboot_timeout: 300
+      when: needs_restarting.rc == 1

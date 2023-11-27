@@ -1,0 +1,11 @@
+---
+
+- name: Set timezone
+  community.general.timezone:
+    name: Australia/Sydney
+
+- name: Copy chrony config
+  ansible.builtin.copy:
+    src: chrony.conf
+    dest: /etc/chrony.conf
+  notify: restart chronyd

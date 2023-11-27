@@ -1,0 +1,26 @@
+---
+- name: Remove un-needed packages
+  ansible.builtin.dnf:
+    name:
+    - gnome-tour
+    state: absent
+
+# - name: Copy desktop background
+#   ansible.builtin.copy:
+#     src: desktop_bground.jpg
+#     dest: /usr/share/backgrounds/desktop_bground.jpg
+#     mode: 0644
+
+# - name: Configure gnome to use background (dconf)
+#   ansible.builtin.copy:
+#     content: |
+#       [org/gnome/desktop/background]
+#       picture-uri='file:///usr/share/backgrounds/desktop_bground.jpg'
+#     dest: /etc/dconf/db/local.d/01-background
+#   notify: update dconf
+
+# - name: Configure gnome to use background (dconf lock)
+#   ansible.builtin.copy:
+#     content: /org/gnome/desktop/background/picture-uri
+#     dest: /etc/dconf/db/local.d/locks/background
+#   notify: update dconf

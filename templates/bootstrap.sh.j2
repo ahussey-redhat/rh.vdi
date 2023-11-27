@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+set -euxo pipefail
+
+echo "Installing required packages"
+dnf install -y xrdp
+
+echo "Enable required services"
+systemctl enable --now xrdp.service
+
+echo "Configure firewalld"
+firewall-cmd --permanent --add-service=rdp
+firewall-cmd --reload

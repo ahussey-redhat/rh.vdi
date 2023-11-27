@@ -1,0 +1,42 @@
+---
+- name: Create build directory
+  ansible.builtin.file:
+    state: directory
+    path: "{{ fedora_gui_image_build_dir }}"
+
+- name: Copy build script
+  ansible.builtin.copy:
+    src: build.sh
+    dest: "{{ fedora_gui_image_build_dir }}/build.sh"
+
+- name: Download Fedora cloud image
+  ansible.builtin.get_url:
+    url: "{{ fedora_gui_image_qcow_url }}"
+    dest: "{{ fedora_gui_image_build_dir }}/{{ fedora_gui_image_qcow_name }}"
+    checksum: "sha256:{{ fedora_gui_image_qcow_sha256 }}"
+
+- name: Resize Image
+  ansible.builtin.shell: |
+    truncate -r {{ fedora_gui_image_qcow_name }} {{ fedora_gui_image_pvc_name }}.qcow2
+    truncate -s 10G {{ fedora_gui_image_pvc_name }}.qcow2
+    virt-resize --expand /dev/sda5 {{ fedora_gui_image_qcow_name }} {{ fedora_gui_image_pvc_name }}.qcow2
+  args:
+    chdir: "{{ fedora_gui_image_build_dir }}"
+    creates: "{{ fedora_gui_image_build_dir }}/{{ fedora_gui_image_pvc_name }}.qcow2"
+
+- name: Customise image
+  ansible.builtin.shell: |
+    virt-customize -a {{ fedora_gui_image_pvc_name }}.qcow2 --run build.sh --selinux-relabel -v
+  args:
+    chdir: "{{ fedora_gui_image_build_dir }}"
+
+- name: Remove existing pvc and dv
+  ansible.builtin.shell: |
+    oc project {{ fedora_gui_image_pvc_namespace }}
+    oc delete pvc {{ fedora_gui_image_pvc_name }} --wait=true || true
+    oc delete dv {{ fedora_gui_image_pvc_name }} --wait=true || true
+
+- name: Upload image to OpenShift
+  ansible.builtin.shell: |
+    oc project {{ fedora_gui_image_pvc_namespace }}
+    virtctl image-upload dv {{ fedora_gui_image_pvc_name }} --size=10Gi --access-mode ReadWriteMany --image-path={{ playbook_dir }}/build/{{ fedora_gui_image_pvc_name }}.qcow2

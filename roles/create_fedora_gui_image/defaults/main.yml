@@ -1,0 +1,7 @@
+---
+fedora_gui_image_build_dir: "{{ playbook_dir }}/build"
+fedora_gui_image_qcow_name: Fedora-Cloud-Base-39-1.5.x86_64.qcow2
+fedora_gui_image_qcow_url: "https://download.fedoraproject.org/pub/fedora/linux/releases/39/Cloud/x86_64/images/{{ fedora_gui_image_qcow_name}}"
+fedora_gui_image_qcow_sha256: ab5be5058c5c839528a7d6373934e0ce5ad6c8f80bd71ed3390032027da52f37
+fedora_gui_image_pvc_name: fedora39-workstation
+fedora_gui_image_pvc_namespace: openshift-virtualization-os-images

@@ -1,0 +1,12 @@
+- name: Create new account
+  hosts: workstations
+  become: true
+  gather_facts: true
+  tasks:
+  - name: Generate workstation account name
+    ansible.builtin.set_fact:
+      _workstation_account: "user{{ inventory_hostname | regex_search('wks([0-9]+)\\.dev\\.lab\\.local', '\\1') | join }}"
+
+  - name: Ensure workstation account exists
+    ansible.builtin.user:
+      name: "{{ _workstation_account }}"
